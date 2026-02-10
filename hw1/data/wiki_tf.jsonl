@@ -5,6 +5,6 @@
 {"id": "5", "article": "The Great Wall of China (Wikipedia)", "statement": "The Great Wall of China was built to protect against invasions from the north.", "label": "true"}
 {"id": "6", "article": "The Great Wall of China (Wikipedia)", "statement": "The entire Great Wall of China was built during the Ming Dynasty.", "label": "false"}
 {"id": "7", "article": "Python (Programming Language) (Wikipedia)", "statement": "Python was first released in 1991.", "label": "true"}
-{"id": "8", "article": "Python (Programming Language) (Wikipedia)", "statement": "Python is named after the snake species python.", "label": "false"}
+{"id": "8", "article": "Python (Programming Language) (Wikipedia)", "statement": "Python coding language is named after the snake species python.", "label": "false"}
 {"id": "9", "article": "Photosynthesis (Wikipedia)", "statement": "Photosynthesis is the process by which plants convert light energy into chemical energy.", "label": "true"}
 {"id": "10", "article": "Photosynthesis (Wikipedia)", "statement": "Photosynthesis requires carbon dioxide and water but does not require sunlight.", "label": "false"}

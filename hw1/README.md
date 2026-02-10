@@ -1,20 +1,25 @@
-HW1:
+HW1: First LLM Script and Simple Evaluation
 
+This LLM interaction is through HuggingFace without an auth key (okay for small usage like this). This codebase is meant for MacOS M1-arch running Python 3.11, other configurations have not been tested.
 
-Create environment on Python 3.11
+Create environment on Python 3.11 
 ```
 python3.11 -m venv venv
 ```
 
+`make sure you stay in the comp388 folder as paths are hardcoded.`
+
 Install deps
 ```
 pip install torch transformers datasets
+# or pip install hw1/requirements.txt for a list of pinned packages
 ```
 
 Use
 ```
-python llm_prompt.py --prompt "x"
+python hw1/llm_prompt.py --prompt "word1 word2"
 ```
+`I get a bus error on my mac for one word prompts`
 
 Additional arguments
 ```
@@ -50,7 +55,7 @@ Expected: false
 Model Output: true
 
 ID: 8
-Statement: Python is named after the snake species python.
+Statement: Python coding language is named after the snake species python.
 Expected: false
 Model Output: true
 
@@ -60,3 +65,5 @@ Expected: false
 Model Output: true
 
 ```
+
+With GPT2, it seems like every time the model provided a wrong answer, it was the model confident in a correct-sounding fact was to be true when it wasn't. 

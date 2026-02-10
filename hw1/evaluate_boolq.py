@@ -11,27 +11,8 @@ import argparse
 import os
 import sys
 import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer
 from datasets import load_dataset
-
-# Prevent multiprocessing issues on macOS
-os.environ['OMP_NUM_THREADS'] = '1'
-os.environ['TOKENIZERS_PARALLELISM'] = 'false'
-os.environ['PYTORCH_ENABLE_MPS_FALLBACK'] = '1'  # Disable MPS acceleration; use CPU fallback
-
-# Set multiprocessing start method early on macOS
-if sys.platform == 'darwin':
-    try:
-        import multiprocessing
-        multiprocessing.set_start_method('fork', force=True)
-    except Exception:
-        pass
-    # Force CPU-only PyTorch on macOS to avoid MPS/Metal issues
-    try:
-        torch.set_default_device('cpu')
-    except Exception:
-        pass
-
+from llm_prompt import load_model_and_tokenizer, generate
 
 def normalize_answer(text):
     """Extract yes/no from model output."""
@@ -43,28 +24,6 @@ def normalize_answer(text):
         return "no"
     else:
         return None
-
-
-def generate_manual(model, tokenizer, input_ids, attention_mask, device, max_new_tokens=10):
-    """Manual token generation loop to avoid .generate() crashes."""
-    generated = input_ids.clone()
-    
-    for _ in range(max_new_tokens):
-        with torch.inference_mode():
-            outputs = model(input_ids=generated, attention_mask=attention_mask)
-        
-        # Get the last logit and pick the token with highest probability
-        next_token_logits = outputs.logits[:, -1, :]
-        next_token = next_token_logits.argmax(dim=-1, keepdim=True)
-        
-        # Append and continue
-        generated = torch.cat([generated, next_token], dim=-1)
-        
-        # Stop if we hit EOS token
-        if next_token.item() == tokenizer.eos_token_id:
-            break
-    
-    return generated
 
 
 def evaluate_experiment(model, tokenizer, device, examples, use_passage=True, experiment_name=""):
@@ -94,16 +53,7 @@ Question:
 Answer:"""
         
         # Generate response
-        input_ids = tokenizer.encode(prompt, return_tensors="pt")
-        prompt_len = input_ids.shape[1]  # Track prompt length
-        attention_mask = torch.ones_like(input_ids)
-        input_ids = input_ids.to(device)
-        attention_mask = attention_mask.to(device)
-        
-        output = generate_manual(model, tokenizer, input_ids, attention_mask, device, max_new_tokens=10)
-        
-        # Extract only the generated tokens (after the prompt)
-        generated_ids = output[0, prompt_len:]
+        generated_ids = generate(model, tokenizer, prompt, device, max_new_tokens=10)
         generated_text = tokenizer.decode(generated_ids, skip_special_tokens=True)
         
         # Normalize answer
@@ -150,25 +100,14 @@ def main():
     
     # Set random seed
     torch.manual_seed(args.seed)
-    if torch.cuda.is_available():
-        torch.cuda.manual_seed(args.seed)
     
     # Load model and tokenizer
-    print(f"Loading model: {args.model}")
-    tokenizer = AutoTokenizer.from_pretrained(args.model)
-    model = AutoModelForCausalLM.from_pretrained(args.model)
-    
-    if tokenizer.pad_token is None:
-        tokenizer.pad_token = tokenizer.eos_token
-    
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-    model.to(device)
-    model.eval()
+    model, tokenizer, device = load_model_and_tokenizer(args.model)
     
     # Load BoolQ dataset
     print("Loading BoolQ dataset...")
     dataset = load_dataset("boolq")
-    examples = dataset["train"][:args.subset_size]
+    examples = dataset["train"].select(range(min(len(dataset["train"]), args.subset_size)))
     
     print(f"Loaded {len(examples)} examples from BoolQ\n")
     

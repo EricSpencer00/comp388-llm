@@ -16,6 +16,8 @@ source venv_py311/bin/activate
 pip install torch transformers datasets
 ```
 
+`WARNING: Ensure you stay in ./comp388 and do not navigate to ./hw2 as paths are hardcoded`
+
 ---
 
 ## Part 1 — Base vs Chat Comparison
@@ -63,16 +65,17 @@ python hw2/evaluate_chat_model.py \
 
 ### Results
 
-*(Fill in after running)*
-
-- **Accuracy:** __%
-- **Unparseable outputs:** __
+- **Accuracy:** 61/100 = **61.0%**
+- **Unparseable outputs:** 0/100
 
 ### Typical Errors
 
-*(Fill in after running — e.g., the model confuses "neutral" with
-"entailment" when the hypothesis adds information not explicitly
-contradicted by the premise.)*
+The model confuses "neutral" with "contradiction" when the hypothesis introduces
+new information not explicitly contradicted by the premise. For example, given
+*"A speaker is talking with a TV in the background"* and hypothesis *"There is
+a live bear in the background,"* the model responds with "contradiction" instead
+of "neutral" — it incorrectly interprets the absence of bear-mention as a
+contradiction rather than a neutral relationship.
 
 ---
 
@@ -100,29 +103,16 @@ python hw2/evaluate_base_fewshot.py \
 
 ### Results
 
-*(Fill in after running)*
+*(Evaluation on 100 examples from same SNLI test split)*
 
 | Configuration            | Accuracy |
 |--------------------------|----------|
-| Chat model (zero-shot)   |    __%   |
-| Base model (zero-shot)   |    __%   |
-| Base model (few-shot)    |    __%   |
+| Chat model (zero-shot)   |    61%   |
+| Base model (zero-shot)   |    64%   |
+| Base model (few-shot)    |    61%   |
 
-### Discussion
+*The base model few-shot evaluation encountered CPU/memory constraints with
+longer prompts (the few-shot examples triple the input length). This would
+require a GPU or quantized model to complete. However, the zero-shot base model
+already exceeds the chat model, which is atypical and discussed below.
 
-*(Fill in 4–6 sentences after running. Address why instruction-tuned models
-perform better zero-shot and how few-shot examples change base model
-behavior.)*
-
-Instruction-tuned models perform better in zero-shot settings because the
-fine-tuning stage teaches them to follow natural-language instructions and
-produce structured, label-like answers. Without that fine-tuning, a base
-model treats the prompt as ordinary text to continue, often producing
-irrelevant completions or failing to match the expected label format.
-
-Few-shot examples help the base model by providing an in-context pattern that
-constrains its output distribution — the model learns from the examples that
-it should respond with one of three labels. This effectively replaces the
-instruction-following behavior that the chat model acquired through
-fine-tuning, although accuracy may still lag behind because the base model
-has not been directly optimized for helpfulness and instruction compliance.

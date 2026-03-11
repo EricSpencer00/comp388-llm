@@ -41,25 +41,18 @@ def normalize_answer(text):
     return None
 
 
-def generate_greedy(model, tokenizer, input_ids, attention_mask, device,
-                    max_new_tokens=10):
-    """Greedy (temperature=0) token-by-token generation."""
-    generated = input_ids.clone()
-
-    for _ in range(max_new_tokens):
-        with torch.inference_mode():
-            outputs = model(input_ids=generated, attention_mask=attention_mask)
-
-        next_token = outputs.logits[:, -1, :].argmax(dim=-1, keepdim=True)
-        generated = torch.cat([generated, next_token], dim=-1)
-        attention_mask = torch.cat(
-            [attention_mask, torch.ones((1, 1), device=device)], dim=-1
+def generate_greedy(model, tokenizer, input_ids, device, max_new_tokens=10):
+    """Greedy generation using model.generate() for efficiency."""
+    with torch.no_grad():
+        output = model.generate(
+            input_ids,
+            max_new_tokens=max_new_tokens,
+            do_sample=False,
+            temperature=None,
+            pad_token_id=tokenizer.pad_token_id,
+            eos_token_id=tokenizer.eos_token_id,
         )
-
-        if next_token.item() == tokenizer.eos_token_id:
-            break
-
-    return generated
+    return output
 
 
 def build_prompt(premise, hypothesis):
@@ -120,10 +113,9 @@ def main():
 
         input_ids = tokenizer.encode(prompt, return_tensors="pt").to(device)
         prompt_len = input_ids.shape[1]
-        attention_mask = torch.ones_like(input_ids).to(device)
 
-        output = generate_greedy(model, tokenizer, input_ids, attention_mask,
-                                 device, max_new_tokens=10)
+        output = generate_greedy(model, tokenizer, input_ids, device,
+                                 max_new_tokens=10)
         generated_text = tokenizer.decode(output[0, prompt_len:],
                                           skip_special_tokens=True)
         model_answer = normalize_answer(generated_text)
